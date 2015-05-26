@@ -73,12 +73,15 @@ def unbundle_width(attribs):
         s = index
     else:
         s = slice(*index)
-    if s.stop != None and s.stop >= base_width:
+    if s.stop != None and s.stop > base_width:
         raise RuleViolation
     if s.start != None and s.start >= base_width:
         raise RuleViolation
     indices = s.indices(base_width)
-    return {"bundle_width" : (indices[1] - indices[0]) // indices[2]}
+    new_width = (indices[1] - indices[0]) // indices[2]
+    if new_width == 0:
+        raise RuleViolation
+    return {"bundle_width" : new_width}
 
 # rule generators
 def gen_type_transform(match, nomatch=None, add=None, remove=None):
@@ -99,7 +102,7 @@ def gen_on_attribute(fn, attribute):
 # generated rules
 r_boolean_tt = gen_type_transform(
     {atom_t, expr_t, logic_t},
-    add={expr_t}, remove={atom_t, reg_t, wire_t})
+    add={expr_t, logic_t}, remove={atom_t, reg_t, wire_t})
 
 r_reg_tt = gen_type_transform(
     {atom_t}, nomatch={expr_t, logic_t},

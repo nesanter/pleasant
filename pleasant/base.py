@@ -125,9 +125,9 @@ class Transformation:
             return str(this.name)
 
     def apply_rules(this, obj):
-        if type(this.rules) != dict:
-            return
-        for key, value in this.rules.items():
+#        if type(this.rules) != dict:
+#            return
+        for key, value in this.rules:
             if len(key) == 0:
                 value(obj)
             elif len(key) == 2:
