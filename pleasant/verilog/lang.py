@@ -16,7 +16,7 @@
 ## along with Pleasant.  If not, see <http://www.gnu.org/licenses/>
 
 import pleasant.base as _base
-import pleasant.util as _util
+import pleasant.misc as _misc
 from . import rules as _rules
 from . import types as _types
 
@@ -47,10 +47,23 @@ reduceor =_base.Transformation(1,
                           rules={_rules.body_to_type_r : _rules.r_boolean_tt,
                                  _rules.none_to_attributes_r : _rules.gen_const_attribute("bundle_width", 1)})
 
-group =_base.Transformation(0, "GROUP", pattern=("{",_base.Glob(0,sep="; "), "}"))
-groupln =_base.Transformation(0, "GROUP", pattern=("{\n",_base.Glob(0, sep=";\n"), "}"))
+
+let = _base.Transformation(2,
+                           name="LET",
+                           pattern=(_base.Glob(1)," := ",_base.Glob(1)),
+                           rules={_rules.body_to_none_r : lambda *args: (_rules.r_let_check(*args), _rules.r_width_same(*args)),
+                                  _rules.body_to_type_r : _rules.r_let_tt})
+
+#group =_base.Transformation(0, "GROUP", pattern=("{",_base.Glob(0,sep="; "), "}"))
+#groupln =_base.Transformation(0, "GROUP", pattern=("{\n",_base.Glob(0, sep=";\n"), "}"))
 #case =_base.Transformation(2, name="CASE", pattern=(Glob(1)," : (",Glob(1),")"))
 #switch =_base.Transformation(-1, name="SWITCH", pattern=("switch ",Glob(1), " { ",Glob(0), " }"))
+
+sync = _base.Transformation(0,
+                            name="SYNC",
+                            pattern=("@",_base.Glob("trigger",default="*"),": ",_base.Glob(0,sep=", "),";"),
+                            rules={_rules.body_to_type_r : _rules.r_sync_tt,
+                                   _rules.attributes_to_none_r : _rules.r_trigger_valid})
 
 wire =_base.Transformation(1,
                       name="WIRE",
@@ -88,7 +101,7 @@ def index_printer(index):
         s += ":"+str(index.step)
     return "["+s+"]"
 
-_unbundle = _base.Transformation(1,
+unbundle = _base.Transformation(1,
                                 name="UNBUNDLE",
                                 pattern=(_base.Glob(1), _base.Glob("index", default="", transform=index_printer)),
                                 rules={_rules.body_to_type_r : _rules.r_unbundle_tt,
@@ -114,11 +127,9 @@ class Unbundler:
     def __init__(this, obj):
         this.obj = obj
     def __getitem__(this, index):
-        return _unbundle(this.obj, attributes={"index" : index})
+        return unbundle(this.obj, attributes={"index" : index})
     def __iter__(this):
-        yield from (_unbundle(this.obj, attributes={"index" : n}) for n in range(obj.attributes.get("bundle_width")))
+        yield from (unbundle(this.obj, attributes={"index" : n}) for n in range(obj.attributes.get("bundle_width")))
     def __repr__(this):
         return "Unbundler("+str(obj)+")"
 
-def unbundle(obj, index):
-    return _unbundle(obj, attributes={"index" : index})

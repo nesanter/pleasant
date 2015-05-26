@@ -15,5 +15,13 @@
 ## You should have received a copy of the GNU General Public License
 ## along with Pleasant.  If not, see <http://www.gnu.org/licenses/>
 
-from . import base
-from . import util
+def curry(fn, *fixed):
+    return lambda *args: fn(*(fixed+args))
+
+def flatten(*args):
+    for arg in args:
+        try:
+            yield from flatten(*arg)
+        except TypeError:
+            yield arg
+

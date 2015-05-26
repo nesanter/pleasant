@@ -15,27 +15,29 @@
 ## You should have received a copy of the GNU General Public License
 ## along with Pleasant.  If not, see <http://www.gnu.org/licenses/>
 
-class InvalidComposition(Exception):
+class PleasantException(Exception):
     pass
 
-class InvalidTransformation(Exception):
+class InvalidComposition(PleasantException):
+    pass
+
+class InvalidTransformation(PleasantException):
     pass
 
 class InvalidTransformationAttributes(InvalidTransformation):
     pass
 
-class InvalidResolution(Exception):
+class InvalidResolution(PleasantException):
     pass
 
-class InvalidPattern(Exception):
+class InvalidPattern(PleasantException):
     pass
 
-class InvalidLink(Exception):
+class InvalidLink(PleasantException):
     pass
 
-class InvalidRule(Exception):
+class InvalidRule(PleasantException):
     pass
 
-class RuleViolation(Exception):
+class RuleViolation(PleasantException):
     pass
-

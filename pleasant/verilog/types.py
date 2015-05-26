@@ -24,4 +24,6 @@ expr_t = _base.Type("expr_t")
 reg_t = _base.Type("reg_t")
 wire_t = _base.Type("wire_t")
 bundle_t = _base.Type("bundle_t")
-
+syncable_t = _base.Type("syncable_t")
+synced_t = _base.Type("syncable_t")
+clock_t = _base.Type("clock_t")

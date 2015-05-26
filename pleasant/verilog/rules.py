@@ -15,7 +15,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with Pleasant.  If not, see <http://www.gnu.org/licenses/>
 
-import pleasant.util as _util
+import pleasant.misc as _misc
 from pleasant.exceptions import RuleViolation
 from .types import *
 
@@ -24,12 +24,13 @@ body_to_type_r = (lambda obj: obj.body, lambda obj, res: obj.set_types(res))
 body_to_none_r = (lambda obj: obj.body, None)
 body_to_attributes_r = (lambda obj: obj.body, lambda obj, res: obj.attributes.update(res))
 none_to_attributes_r = (None, lambda obj, res: obj.attributes.update(res))
+attributes_to_none_r = (lambda obj: obj.attributes, None)
 attributes_to_attributes_r = (lambda obj: obj.attributes, lambda obj, res: obj.attributes.update(res))
 body_and_attributes_to_attributes_r = (lambda obj: (obj.attributes, obj.body), lambda obj, res: obj.attributes.update(res))
 
 # rule functions
-def type_transform(match, add, remove, objs):
-    if any(map(lambda obj: obj.types.isdisjoint(match), objs)):
+def type_transform(match, nomatch, add, remove, objs):
+    if any(map(lambda obj: obj.types.isdisjoint(match) or not obj.types.isdisjoint(nomatch), objs)):
         raise RuleViolation
     return add.union(*iter([obj.types for obj in objs])).difference(remove)
 
@@ -47,6 +48,10 @@ def all_same_weak(vals):
 
 def assert_all(fn, vals):
     if any(map(fn, vals)):
+        raise RuleViolation
+
+def enforce(istrue):
+    if not istrue:
         raise RuleViolation
 
 def const_attribute(attribute, value, objs):
@@ -83,13 +88,13 @@ def gen_type_transform(match, nomatch=None, add=None, remove=None):
         add = set()
     if remove == None:
         remove = set()
-    return _util.curry(type_transform, match, add, remove)
+    return _misc.curry(type_transform, match, nomatch, add, remove)
 
 def gen_const_attribute(attribute, value):
-    return _util.curry(const_attribute, attribute, value)
+    return _misc.curry(const_attribute, attribute, value)
 
 def gen_on_attribute(fn, attribute):
-    return _util.curry(on_attribute, fn, attribute)
+    return _misc.curry(on_attribute, fn, attribute)
 
 # generated rules
 r_boolean_tt = gen_type_transform(
@@ -112,8 +117,17 @@ r_unbundle_tt = gen_type_transform(
     {atom_t, bundle_t},
     add=set(), remove={atom_t})
 
+r_sync_tt = gen_type_transform(
+    {atom_t, syncable_t},
+    add={synced_t}, remove={atom_t,syncable_t})
+
+r_let_check = lambda body: enforce(not body[0].types.isdisjoint({atom_t, reg_t}) and body[0].types.isdisjoint({expr_t}) and not body[1].types.isdisjoint({atom_t, logic_t}))
+r_let_tt = lambda body: {syncable_t}
+
 r_width_same = gen_on_attribute(all_same_weak, "bundle_width")
 
 r_bundle_width = lambda body: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in body))}
-#r_unbundle_width = lambda ab: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in ab[1][0].body[slice(*_util.flatten(ab[0].get("index")))]))}
+#r_unbundle_width = lambda ab: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in ab[1][0].body[slice(*_misc.flatten(ab[0].get("index")))]))}
 r_unbundle_width = unbundle_width
+
+r_trigger_valid = lambda attribs: type_transform({atom_t, clock_t}, set(), set(), set(), attribs.get("clock",[]))

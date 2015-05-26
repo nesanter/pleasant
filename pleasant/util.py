@@ -71,15 +71,6 @@ def network(obj, s=None):
     return s
 
 def dup(obj, alias=True, keepatoms=True):
-    return apply(obj, lambda x: x, alias=alias, keepatoms=keepatoms)
+    return apply(lambda x: x, obj, alias=alias, keepatoms=keepatoms)
 
-def curry(fn, *fixed):
-    return lambda *args: fn(*(fixed+args))
-
-def flatten(*args):
-    for arg in args:
-        try:
-            yield from flatten(*arg)
-        except TypeError:
-            yield arg
 

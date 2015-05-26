@@ -15,7 +15,8 @@
 ## You should have received a copy of the GNU General Public License
 ## along with Pleasant.  If not, see <http://www.gnu.org/licenses/>
 
-from pleasant import exceptions as _exceptions
+import pleasant.exceptions as _exceptions
+import pleasant.misc as _misc
 
 class Linkable:
     def __init__(this):
