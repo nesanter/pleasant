@@ -85,7 +85,7 @@ bundle = _base.Transformation(0,
 
 
 
-def index_printer(index):
+def slice_printer(index):
     if type(index) == slice:
         pass
     elif type(index) == int:
@@ -105,10 +105,31 @@ def index_printer(index):
 
 unbundle = _base.Transformation(1,
                                 name="UNBUNDLE",
-                                pattern=(_base.Glob(1), _base.Glob("index", default="", transform=index_printer)),
+                                pattern=(_base.Glob(1), _base.Glob("index", default="", transform=slice_printer)),
                                 rules=((_rules.body_to_type_r, _rules.r_unbundle_tt),
                                        (_rules.body_to_attributes_r, _rules.r_bundle_width),
-                                       (_rules.attributes_to_attributes_r, _rules.r_unbundle_width)))
+                                       (_rules.attributes_to_attributes_r, _rules.r_unbundle_width),
+                                       (_rules.attributes_to_remove_type_r, _rules.r_unbundle_tt2)))
+
+def index_printer(index):
+    s = ""
+    for i in _misc.flatten(index):
+        s += "["+str(i)+"]"
+    return s
+
+array = _base.Transformation(1,
+                             name="ARRAY",
+                             pattern=(_base.Glob(1), "#", _base.Glob("array_width")),
+                             rules=((_rules.body_to_type_r, _rules.r_array_tt),
+                                    (_rules.attributes_to_none_r, _rules.gen_attribute_exists("array_width"))))
+
+index = _base.Transformation(1,
+                             name="INDEX",
+                             pattern=(_base.Glob(1), _base.Glob("index", default="", transform=index_printer)),
+                             rules=((_rules.body_to_type_r, _rules.r_index_tt),
+                                    (_rules.attributes_and_body_to_none_r, _rules.r_index_check)))
+
+
 #pack =_base.Transformation(1,
 #                      name="PACK",
 #                      attributes={"packed_width"},
@@ -128,10 +149,35 @@ unbundle = _base.Transformation(1,
 class Unbundler:
     def __init__(this, obj):
         this.obj = obj
-    def __getitem__(this, index):
-        return unbundle(this.obj, attributes={"index" : index})
+    def __getitem__(this, idx):
+        return unbundle(this.obj, attributes={"index" : idx})
     def __iter__(this):
-        yield from (unbundle(this.obj, attributes={"index" : n}) for n in range(obj.attributes.get("bundle_width")))
+        yield from (unbundle(this.obj, attributes={"index" : n}) for n in range(this.obj.attributes.get("bundle_width")))
+    def __len__(this):
+        return this.obj.attributes.get("bundle_width")
     def __repr__(this):
         return "Unbundler("+str(this.obj)+")"
+
+class Indexer:
+    def __init__(this, obj):
+        this.obj = obj
+    def __getitem__(this, idx):
+        return index(this.obj, attributes={"index":idx})
+    def __iter__(this):
+        yield from (index(this.obj, attributes={"index":idx}) for idx in _exhaust(this.obj.attributes.get("array_width")))
+    def __len__(this):
+        return this.obj.attributes.get("array_width")
+    def __repr__(this):
+        return "Indexer("+str(this.obj)+")"
+
+def make_array(obj, *dims):
+    return array(obj, attributes={"array_width":dims})
+
+def _exhaust(dims):
+    if type(dims) == int:
+        yield from ((n,) for n in range(dims))
+    elif len(dims) == 1:
+        yield from ((n,) for n in range(dims[0]))
+    else:
+        yield from ((x,)+y for x in range(dims[0]) for y in _exhaust(dims[1:]))
 

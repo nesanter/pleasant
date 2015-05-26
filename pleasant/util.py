@@ -19,6 +19,7 @@ import pleasant.base as _base
 import pleasant.exceptions as _exceptions
 
 def apply(fn, obj, alias=False, keepatoms=True):
+    obj = fn(obj)
     if isinstance(obj, _base.Composite):
         if alias:
             newalias = obj.alias
@@ -26,14 +27,15 @@ def apply(fn, obj, alias=False, keepatoms=True):
             newalias = None
         return _base.Composite(fn(obj.trans),
                                *map(lambda o: apply(fn, o, alias=alias, keepatoms=keepatoms), obj.body),
-                               alias=newalias)
+                               alias=newalias,
+                               attributes=obj.attributes)
     elif isinstance(obj, _base.Atom):
         if keepatoms:
-            return fn(obj)
+            return obj
         else:
-            return fn(_base.Atom(obj.name+"'"))
-    elif isinstance(obj, _base.Transformation):
-        return fn(obj)
+            return _base.Atom(obj.name+"'",attributes=obj.attributes)
+#    elif isinstance(obj, _base.Transformation):
+#        return obj
     else:
         return _exceptions.InvalidResolution
 

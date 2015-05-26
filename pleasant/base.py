@@ -60,6 +60,12 @@ class Composite(Linkable):
             this.attributes = dict()
         else:
             this.attributes = attributes
+
+        for child in body:
+            for key, value in child.attributes.items():
+                if not key in attributes:
+                    attributes[key] = value
+
         this.types = {}
         trans.apply_rules(this)
 
