@@ -69,11 +69,31 @@ bundle = _base.Transformation(0,
                               rules={_rules.body_to_type_r : _rules.r_bundle_tt,
                                      _rules.body_to_attributes_r : _rules.r_bundle_width})
 
-unbundle = _base.Transformation(1,
+
+
+def index_printer(index):
+    if type(index) == slice:
+        pass
+    elif type(index) == int:
+        index = slice(index,index+1)
+    else:
+        index = slice(*index)
+    s = ""
+    if index.start != None:
+        s += str(index.start)
+    s += ":"
+    if index.stop != None:
+        s += str(index.stop)
+    if index.step != None:
+        s += ":"+str(index.step)
+    return "["+s+"]"
+
+_unbundle = _base.Transformation(1,
                                 name="UNBUNDLE",
-                                pattern=(_base.Glob(1), _base.Glob("index", default="", transform=lambda v: list(_util.flatten(v)))),
+                                pattern=(_base.Glob(1), _base.Glob("index", default="", transform=index_printer)),
                                 rules={_rules.body_to_type_r : _rules.r_unbundle_tt,
-                                       _rules.body_and_attributes_to_attributes_r : _rules.r_unbundle_width})
+                                       _rules.body_to_attributes_r : _rules.r_bundle_width,
+                                       _rules.attributes_to_attributes_r : _rules.r_unbundle_width})
 #pack =_base.Transformation(1,
 #                      name="PACK",
 #                      attributes={"packed_width"},
@@ -87,3 +107,18 @@ unbundle = _base.Transformation(1,
 #                              required_attributes={"index"},
 #                              pattern=(_base.Glob(1), "[", _base.Glob("index"), "]"),
 #                              rules={_rules.body_to_none_r : _rules.gen_on_attribute(lambda v: v > 0, "packed_width")})
+
+# helper functions
+
+class Unbundler:
+    def __init__(this, obj):
+        this.obj = obj
+    def __getitem__(this, index):
+        return _unbundle(this.obj, attributes={"index" : index})
+    def __iter__(this):
+        yield from (_unbundle(this.obj, attributes={"index" : n}) for n in range(obj.attributes.get("bundle_width")))
+    def __repr__(this):
+        return "Unbundler("+str(obj)+")"
+
+def unbundle(obj, index):
+    return _unbundle(obj, attributes={"index" : index})

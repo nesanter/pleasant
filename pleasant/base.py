@@ -81,6 +81,10 @@ class Composite(Linkable):
                 else:
                     raise _exceptions.InvalidPattern
             return s
+
+    def __getitem__(this, obj):
+        return this.body[obj]
+
     def set_alias(this, alias):
         this.alias = alias
 

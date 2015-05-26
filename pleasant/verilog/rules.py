@@ -55,6 +55,26 @@ def const_attribute(attribute, value, objs):
 def on_attribute(fn, attribute, objs):
     return map(fn, (obj.attributes.get(attribute) for obj in objs))
 
+def unbundle_width(attribs):
+    base_width = attribs.get("bundle_width", None)
+    if base_width == None:
+        raise RuleViolation
+    index = attribs.get("index")
+    if index == None:
+        raise RuleViolation
+    if type(index) == int:
+        s = slice(index,index+1)
+    elif type(index) == slice:
+        s = index
+    else:
+        s = slice(*index)
+    if s.stop != None and s.stop >= base_width:
+        raise RuleViolation
+    if s.start != None and s.start >= base_width:
+        raise RuleViolation
+    indices = s.indices(base_width)
+    return {"bundle_width" : (indices[1] - indices[0]) // indices[2]}
+
 # rule generators
 def gen_type_transform(match, nomatch=None, add=None, remove=None):
     if nomatch == None:
@@ -95,4 +115,5 @@ r_unbundle_tt = gen_type_transform(
 r_width_same = gen_on_attribute(all_same_weak, "bundle_width")
 
 r_bundle_width = lambda body: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in body))}
-r_unbundle_width = lambda ab: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in ab[1][0].body[slice(*_util.flatten(ab[0].get("index")))]))}
+#r_unbundle_width = lambda ab: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in ab[1][0].body[slice(*_util.flatten(ab[0].get("index")))]))}
+r_unbundle_width = unbundle_width
