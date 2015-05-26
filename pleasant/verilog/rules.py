@@ -75,8 +75,9 @@ def attribute_test(key, fn, iftrue, iffalse, attributes):
     else:
         return iffalse
 
-def on_attribute(fn, attribute, objs):
-    return map(fn, (obj.attributes.get(attribute) for obj in objs))
+def on_attribute(fn, attribute, default, objs):
+    return fn((obj.attributes.get(attribute, default) for obj in objs))
+#    return map(fn, (obj.attributes.get(attribute, default) for obj in objs))
 
 def unbundle_width(attribs):
     base_width = attribs.get("bundle_width", None)
@@ -114,8 +115,8 @@ def gen_type_transform(match, nomatch=None, add=None, remove=None):
 def gen_const_attribute(attribute, value):
     return _misc.curry(const_attribute, attribute, value)
 
-def gen_on_attribute(fn, attribute):
-    return _misc.curry(on_attribute, fn, attribute)
+def gen_on_attribute(fn, attribute, default=None):
+    return _misc.curry(on_attribute, fn, attribute, default)
 
 def gen_attribute_exists(attribute):
     return _misc.curry(attribute_exists, attribute)
@@ -166,7 +167,7 @@ r_index_check = lambda ab: enforce(len(list(_misc.flatten(ab[0].get("index", [])
 r_let_check = lambda body: enforce(not body[0].types.isdisjoint({atom_t, reg_t}) and body[0].types.isdisjoint({expr_t, array_t}) and not body[1].types.isdisjoint({atom_t, logic_t, array_t}))
 r_let_tt = lambda body: {syncable_t}
 
-r_width_same = gen_on_attribute(all_same_weak, "bundle_width")
+r_width_same = gen_on_attribute(all_same_weak, "bundle_width", default=1)
 
 r_bundle_width = lambda body: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in body))}
 #r_unbundle_width = lambda ab: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in ab[1][0].body[slice(*_misc.flatten(ab[0].get("index")))]))}
