@@ -75,3 +75,11 @@ def dup(obj, alias=True, keepatoms=True):
 
 def curry(fn, *fixed):
     return lambda *args: fn(*(fixed+args))
+
+def flatten(*args):
+    for arg in args:
+        try:
+            yield from flatten(*arg)
+        except TypeError:
+            yield arg
+

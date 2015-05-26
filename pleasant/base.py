@@ -27,12 +27,15 @@ class Linkable:
         this.link_out += [l]
 
 class Atom(Linkable):
-    def __init__(this, name=None):
+    def __init__(this, name=None, attributes=None):
         this.name = name
         this.link_in = []
         this.link_out = []
         this.types = {atom_t}
-        this.attributes = dict()
+        if attributes == None:
+            this.attributes = dict()
+        else:
+            this.attributes = attributes
     def __repr__(this):
         if this.name == None:
             return "<atom>"
@@ -93,31 +96,21 @@ class Transformation:
     def __init__(this, nary,
                  name=None,
                  pattern=None,
-                 attributes=None,
-                 required_attributes=None,
                  rules=None):
         this.name = name
         this.nary = nary
         this.pattern = pattern
-        if attributes == None:
-            this.attributes = set()
-        else:
-            this.attributes = attributes
-        if required_attributes == None:
-            required_attributes = set()
-        elif not required_attributes.issubset(this.attributes):
-            raise _exceptions.InvalidTransformation
-        this.required_attributes = required_attributes
         this.rules = rules
 
     def __call__(this, *args, attributes=None):
         if this.nary == 0 or (this.nary < 0 and len(args) >= -this.nary) or len(args) == this.nary:
-            if attributes == None:
-                attributes = set()
-            if this.attributes.issuperset(attributes) and this.required_attributes.issubset(attributes):
-                return Composite(this, *args, attributes=attributes)
-            else:
-                raise _exceptions.InvalidTransformationAttributes
+            return Composite(this, *args, attributes=attributes)
+#            if attributes == None:
+#                attributes = set()
+#            if this.attributes.issuperset(attributes) and this.required_attributes.issubset(attributes):
+#                return Composite(this, *args, attributes=attributes)
+#            else:
+#                raise _exceptions.InvalidTransformationAttributes
         raise _exceptions.InvalidTransformation
 
     def __repr__(this):
@@ -147,14 +140,18 @@ class Transformation:
                 raise _exceptions.InvalidRule
 
 class Glob:
-    def __init__(this, length, sep=", ", filt=None, default=None):
+    def __init__(this, length, sep=", ", filt=None, default=None, transform=None):
         this.length = length
         this.sep = sep
         this.filt = filt
         this.default = default
+        this.transform = transform
     def __call__(this, objs, attributes):
         if type(this.length) == str:
-            return str(attributes.get(this.length, this.default)), objs
+            if this.transform == None:
+                return str(attributes.get(this.length, this.default)), objs
+            else:
+                return str(this.transform(attributes.get(this.length, this.default))), objs
         first = True
         s = ""
         if this.length == 0:
@@ -169,7 +166,10 @@ class Glob:
                 first = False
             else:
                 s += this.sep
-            s += str(obj)
+            if this.transform == None:
+                s += str(obj)
+            else:
+                s += str(this.transform(obj))
         return s, objs[length:]
 
 class Link:

@@ -23,5 +23,5 @@ logic_t = _base.Type("logic_t")
 expr_t = _base.Type("expr_t")
 reg_t = _base.Type("reg_t")
 wire_t = _base.Type("wire_t")
-pack_t = _base.Type("pack_t")
+bundle_t = _base.Type("bundle_t")
 

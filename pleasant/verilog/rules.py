@@ -25,6 +25,7 @@ body_to_none_r = (lambda obj: obj.body, None)
 body_to_attributes_r = (lambda obj: obj.body, lambda obj, res: obj.attributes.update(res))
 none_to_attributes_r = (None, lambda obj, res: obj.attributes.update(res))
 attributes_to_attributes_r = (lambda obj: obj.attributes, lambda obj, res: obj.attributes.update(res))
+body_and_attributes_to_attributes_r = (lambda obj: (obj.attributes, obj.body), lambda obj, res: obj.attributes.update(res))
 
 # rule functions
 def type_transform(match, add, remove, objs):
@@ -83,9 +84,15 @@ r_wire_tt = gen_type_transform(
     {atom_t}, nomatch={expr_t, logic_t},
     add={wire_t, logic_t}, remove={atom_t})
 
-r_pack_tt = gen_type_transform(
-    {atom_t, reg_t, wire_t},
-    add={pack_t}, remove={atom_t})
+r_bundle_tt = gen_type_transform(
+    {atom_t, logic_t, bundle_t},
+    add={logic_t, bundle_t}, remove={atom_t})
 
-r_packed_same = gen_on_attribute(all_same_weak, "packed_width")
+r_unbundle_tt = gen_type_transform(
+    {atom_t, bundle_t},
+    add=set(), remove={atom_t})
 
+r_width_same = gen_on_attribute(all_same_weak, "bundle_width")
+
+r_bundle_width = lambda body: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in body))}
+r_unbundle_width = lambda ab: {"bundle_width" : sum((obj.attributes.get("bundle_width",1) for obj in ab[1][0].body[slice(*_util.flatten(ab[0].get("index")))]))}
