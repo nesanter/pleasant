@@ -22,8 +22,8 @@ class Linkable:
     def __init__(this):
         this.link_in = []
         this.link_out = []
-    def link(this, to):
-        l = Link(this, to)
+    def link(this, to, types=None):
+        l = Link(this, to, types=types)
         to.link_in += [l]
         this.link_out += [l]
 
@@ -183,11 +183,15 @@ class Glob:
         return s, objs[length:]
 
 class Link:
-    def __init__(this, a, b):
+    def __init__(this, a, b, types=None):
         if not isinstance(a, (Atom,Composite)) or not isinstance(b, (Atom,Composite)):
             raise _exceptions.InvalidLink
         this.a = a
         this.b = b
+        if types == None:
+            this.types = set()
+        else:
+            this.types = types
     def __repr__(this):
         return str(this.a) + " --> " + str(this.b)
 
