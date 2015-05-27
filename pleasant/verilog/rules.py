@@ -133,11 +133,11 @@ r_boolean_tt = gen_type_transform(
     add={expr_t, logic_t}, remove={atom_t, reg_t, wire_t})
 
 r_reg_tt = gen_type_transform(
-    {atom_t}, nomatch={expr_t, logic_t, array_t},
+    {atom_t, bundle_t, array_t}, nomatch={expr_t},
     add={reg_t, logic_t}, remove={atom_t})
 
 r_wire_tt = gen_type_transform(
-    {atom_t}, nomatch={expr_t, logic_t, array_t},
+    {atom_t, bundle_t, array_t}, nomatch={expr_t},
     add={wire_t, logic_t}, remove={atom_t})
 
 r_bundle_tt = gen_type_transform(
@@ -153,7 +153,7 @@ r_sync_tt = gen_type_transform(
     add={synced_t}, remove={atom_t,syncable_t})
 
 r_array_tt = gen_type_transform(
-    {atom_t, reg_t, wire_t, bundle_t}, nomatch={expr_t,array_t},
+    {atom_t, bundle_t}, nomatch={expr_t,array_t,reg_t,wire_t},
     add={array_t}, remove={atom_t})
 
 r_index_tt = gen_type_transform(
@@ -164,8 +164,9 @@ r_unbundle_tt2 = gen_attribute_test("bundle_width", lambda v: v == 1, {bundle_t}
 
 r_index_check = lambda ab: enforce(len(list(_misc.flatten(ab[0].get("index", [])))) == len(list(_misc.flatten(ab[1][0].attributes.get("array_width")))) and all(((lambda a,b: a<b)(*v) for v in  zip((v for v in _misc.flatten(ab[0].get("index"))),(v for v in _misc.flatten(ab[1][0].attributes.get("array_width")))))))
 
-r_let_check = lambda body: enforce(not body[0].types.isdisjoint({atom_t, reg_t}) and body[0].types.isdisjoint({expr_t, array_t}) and not body[1].types.isdisjoint({atom_t, logic_t, array_t}))
+r_let_check = lambda body: enforce(not body[0].types.isdisjoint({atom_t, reg_t}) and body[0].types.isdisjoint({expr_t, array_t}) and not body[1].types.isdisjoint({atom_t, logic_t}))
 r_let_tt = lambda body: {syncable_t}
+r_hard_link_left = lambda body: body[1].link(body[0], types={hard_link_t})
 
 r_width_same = gen_on_attribute(all_same_weak, "bundle_width", default=1)
 
@@ -174,3 +175,11 @@ r_bundle_width = lambda body: {"bundle_width" : sum((obj.attributes.get("bundle_
 r_unbundle_width = unbundle_width
 
 r_trigger_valid = lambda attribs: type_transform({atom_t, clock_t}, set(), set(), set(), attribs.get("clock",[]))
+
+def r_interit_width_from_n(n, body):
+    if "bundle_width" in body[n].attributes:
+        return {"bundle_width" : body[n].attributes["bundle_width"]}
+    else:
+        return {}
+
+r_inherit_width = _misc.curry(r_interit_width_from_n, 0)

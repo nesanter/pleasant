@@ -30,6 +30,7 @@ class Linkable:
 class Atom(Linkable):
     def __init__(this, name=None, attributes=None):
         this.name = name
+        this.alias = None
         this.link_in = []
         this.link_out = []
         this.types = {atom_t}
@@ -38,12 +39,18 @@ class Atom(Linkable):
         else:
             this.attributes = attributes
     def __repr__(this):
-        if this.name == None:
+        if this.alias != None:
+            return this.alias
+        elif this.name == None:
             return "<atom>"
         else:
             return str(this.name)
+    def __contains__(this, obj):
+        return False
     def atoms(this):
         return {this}
+    def set_alias(this, alias):
+        this.alias = alias
 
 class Composite(Linkable):
     def __init__(this, trans, *body, alias=None, attributes=None):
@@ -91,6 +98,9 @@ class Composite(Linkable):
 
     def __getitem__(this, obj):
         return this.body[obj]
+
+    def __contains__(this, obj):
+        return any([b == obj or obj in b for b in this.body])
 
     def set_alias(this, alias):
         this.alias = alias

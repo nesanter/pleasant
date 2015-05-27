@@ -19,23 +19,28 @@ import pleasant.base as _base
 import pleasant.misc as _misc
 from . import rules as _rules
 from . import types as _types
+from . import tools as tools
+#from . import generate as generate
 
 # transformations
 bitand = _base.Transformation(2,
                         name="&",
                         pattern=("(", _base.Glob(1), " & ", _base.Glob(1), ")"),
                         rules=((_rules.body_to_type_r, _rules.r_boolean_tt),
-                               (_rules.body_to_none_r, _rules.r_width_same)))
+                               (_rules.body_to_none_r, _rules.r_width_same),
+                               (_rules.body_to_attributes_r, _rules.r_inherit_width)))
 bitor = _base.Transformation(2,
                        name="|",
                        pattern=("(", _base.Glob(1), " | ",_base.Glob(1), ")"),
                        rules=((_rules.body_to_type_r, _rules.r_boolean_tt),
-                              (_rules.body_to_none_r, _rules.r_width_same)))
+                              (_rules.body_to_none_r, _rules.r_width_same),
+                              (_rules.body_to_attributes_r, _rules.r_inherit_width)))
 bitxor =_base.Transformation(2,
                         name="^",
                         pattern=("(",_base.Glob(1), " ^ ",_base.Glob(1), ")"),
                         rules=((_rules.body_to_type_r, _rules.r_boolean_tt),
-                               (_rules.body_to_none_r, _rules.r_width_same)))
+                               (_rules.body_to_none_r, _rules.r_width_same),
+                               (_rules.body_to_attributes_r, _rules.r_inherit_width)))
 
 reduceand =_base.Transformation(1,
                            name="r&",
@@ -53,7 +58,8 @@ let = _base.Transformation(2,
                            name="LET",
                            pattern=(_base.Glob(1)," := ",_base.Glob(1)),
                            rules=((_rules.body_to_none_r, lambda *args: (_rules.r_let_check(*args), _rules.r_width_same(*args))),
-                                  (_rules.body_to_type_r, _rules.r_let_tt)))
+                                  (_rules.body_to_type_r, _rules.r_let_tt),
+                                  (_rules.body_to_none_r, _rules.r_hard_link_left)))
 
 #group =_base.Transformation(0, "GROUP", pattern=("{",_base.Glob(0,sep="; "), "}"))
 #groupln =_base.Transformation(0, "GROUP", pattern=("{\n",_base.Glob(0, sep=";\n"), "}"))
@@ -70,12 +76,14 @@ wire =_base.Transformation(1,
                       name="WIRE",
                       pattern=("wire:",_base.Glob(1)),
                       rules=((_rules.body_to_type_r, _rules.r_wire_tt),
-                             (_rules.none_to_attributes_r, _rules.gen_const_attribute("bundle_width", 1))))
+                             (_rules.body_to_attributes_r, _rules.r_inherit_width)))
+#                             (_rules.none_to_attributes_r, _rules.gen_const_attribute("bundle_width", 1))))
 reg =_base.Transformation(1,
                      name="REG",
                      pattern=("reg:",_base.Glob(1)),
                      rules=((_rules.body_to_type_r, _rules.r_reg_tt),
-                            (_rules.none_to_attributes_r, _rules.gen_const_attribute("bundle_width", 1))))
+                            (_rules.body_to_attributes_r, _rules.r_inherit_width)))
+#                            (_rules.none_to_attributes_r, _rules.gen_const_attribute("bundle_width", 1))))
 
 bundle = _base.Transformation(0,
                               name="BUNDLE",
@@ -129,21 +137,6 @@ index = _base.Transformation(1,
                              rules=((_rules.body_to_type_r, _rules.r_index_tt),
                                     (_rules.attributes_and_body_to_none_r, _rules.r_index_check)))
 
-
-#pack =_base.Transformation(1,
-#                      name="PACK",
-#                      attributes={"packed_width"},
-#                      required_attributes={"packed_width"},
-#                      pattern=(_base.Glob(1), ":", _base.Glob("packed_width")),
-#                      rules={_rules.body_to_type_r : _rules.r_pack_tt})
-#
-#cindex = _base.Transformation(1,
-#                              name="INDEX",
-#                              attributes={"index", "width"},
-#                              required_attributes={"index"},
-#                              pattern=(_base.Glob(1), "[", _base.Glob("index"), "]"),
-#                              rules={_rules.body_to_none_r : _rules.gen_on_attribute(lambda v: v > 0, "packed_width")})
-
 # helper functions
 
 class Unbundler:
@@ -181,3 +174,5 @@ def _exhaust(dims):
     else:
         yield from ((x,)+y for x in range(dims[0]) for y in _exhaust(dims[1:]))
 
+def soft_link(a, b):
+    a.link(b, types={soft_link_t})

@@ -28,3 +28,7 @@ array_t = _base.Type("array_t")
 syncable_t = _base.Type("syncable_t")
 synced_t = _base.Type("syncable_t")
 clock_t = _base.Type("clock_t")
+
+# link types
+soft_link_t = _base.Type("soft_link_t") # continuous links
+hard_link_t = _base.Type("hard_link_t") # synchronous links

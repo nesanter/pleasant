@@ -39,6 +39,9 @@ def apply(fn, obj, alias=False, keepatoms=True):
     else:
         return _exceptions.InvalidResolution
 
+def dup(obj, alias=True, keepatoms=True):
+    return apply(lambda x: x, obj, alias=alias, keepatoms=keepatoms)
+
 def replace(old, new, obj):
     if obj == old:
         return new
@@ -72,7 +75,26 @@ def network(obj, s=None):
 
     return s
 
-def dup(obj, alias=True, keepatoms=True):
-    return apply(lambda x: x, obj, alias=alias, keepatoms=keepatoms)
+def get_net_atoms(obj):
+    return set().union(*[{at for at in sub.atoms()} for sub in network(obj)])
+
+def get_atoms(objs):
+    return set().union(*[obj.atoms() for obj in objs])
+
+def get_by_transform(transform, obj):
+    if isinstance(obj, _base.Composite):
+        if obj.trans == transform:
+            return {obj}
+        else:
+            return set.union(*[get_by_transform(transform, sub) for sub in obj])
+    else:
+        return set()
+
+def get_inputs(obj):
+    res = get_net_atoms(obj)
+    net = network(obj).difference({obj})
+    subs = [sub for sub in net if len(sub.link_in) > 0]
+    subatoms = set().union(*[obj.atoms() for obj in subs])
+    return res.difference(subatoms)
 
 

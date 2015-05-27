@@ -16,3 +16,4 @@
 ## along with Pleasant.  If not, see <http://www.gnu.org/licenses/>
 
 from . import lang
+from . import generate
