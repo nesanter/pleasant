@@ -112,6 +112,10 @@ def gen_type_transform(match, nomatch=None, add=None, remove=None):
         remove = set()
     return _misc.curry(type_transform, match, nomatch, add, remove)
 
+def gen_multiple_type_transforms(tts, ranges):
+    assert len(tts) == len(ranges)
+    return lambda objs: set().union(*[tts[i](*objs[slice(*ranges[i])]) for i in len(ranges)])
+
 def gen_const_attribute(attribute, value):
     return _misc.curry(const_attribute, attribute, value)
 
@@ -160,9 +164,38 @@ r_index_tt = gen_type_transform(
     {atom_t, array_t},
     remove={atom_t, array_t})
 
+r_varindex_tt = gen_multiple_type_transforms(
+    (r_index_tt, gen_type_transform({atom_t, logic_t})),
+    ((0,1), (1,2)))
+
+
 r_unbundle_tt2 = gen_attribute_test("bundle_width", lambda v: v == 1, {bundle_t}, set())
 
-r_index_check = lambda ab: enforce(len(list(_misc.flatten(ab[0].get("index", [])))) == len(list(_misc.flatten(ab[1][0].attributes.get("array_width")))) and all(((lambda a,b: a<b)(*v) for v in  zip((v for v in _misc.flatten(ab[0].get("index"))),(v for v in _misc.flatten(ab[1][0].attributes.get("array_width")))))))
+
+def r_index_check(ab):
+    idx = list(_misc.flatten(ab[0].get("index", [])))
+    width = list(_misc.flatten(ab[1][0].attributes.get("array_width")))
+    if len(idx) != len(width):
+        raise RuleViolation
+    for i, w in zip(idx, width):
+        if i >= w:
+            raise RuleViolation
+
+def r_varindex_check(ab):
+    idx = list(_misc.flatten(ab[0].get("index", [])))
+    width = list(_misc.flatten(ab[1][0].attributes.get("array_width")))
+    if len(idx) + 1 != len(width):
+        raise RuleViolation
+    for i, w in zip(idx, width[:-1]):
+        if i >= w:
+            raise RuleViolation
+    if not atom_t in ab[1][1].types:
+        vwidth = ab[1][1].attributes.get("bundle_width")
+        if 2**vwidth != width[-1]:
+            raise RuleViolation
+
+#r_index_check = lambda ab: enforce(len(list(_misc.flatten(ab[0].get("index", [])))) == len(list(_misc.flatten(ab[1][0].attributes.get("array_width")))) and all(((lambda a,b: a<b)(*v) for v in  zip((v for v in _misc.flatten(ab[0].get("index"))),(v for v in _misc.flatten(ab[1][0].attributes.get("array_width")))))))
+#r_varindex_check = lambda ab: enforce(len(list(_misc.flatten(ab[0].get("index", []))))+1 == len(list(_misc.flatten(ab[1][0].attributes.get("array_width")))) and (len(list(_misc.flatten(aball(((lambda a,b: a<b)(*v) for v in zip((v for v in _misc.flatten(ab[0].get("index"))),(v for v in _misc.flatten(ab[1][0].attributes.get("array_width")))
 
 r_let_check = lambda body: enforce(not body[0].types.isdisjoint({atom_t, reg_t}) and body[0].types.isdisjoint({expr_t, array_t}) and not body[1].types.isdisjoint({atom_t, logic_t}))
 r_let_tt = lambda body: {syncable_t}
@@ -182,4 +215,9 @@ def r_interit_width_from_n(n, body):
     else:
         return {}
 
-r_inherit_width = _misc.curry(r_interit_width_from_n, 0)
+def inherit_from_n(attributes, n, body):
+    return {attrib:body[n].attributes.get(attrib) for attrib in attributes if attrib in body[n].attributes}
+
+#r_inherit_width = _misc.curry(r_interit_width_from_n, 0)
+r_inherit_width = _misc.curry(inherit_from_n, ["bundle_width", "array_width"], 0)
+
