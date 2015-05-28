@@ -123,9 +123,9 @@ class Transformation:
         this.pattern = pattern
         this.rules = rules
 
-    def __call__(this, *args, attributes=None):
+    def __call__(this, *args, attributes=None, alias=None):
         if this.nary == 0 or (this.nary < 0 and len(args) >= -this.nary) or len(args) == this.nary:
-            return Composite(this, *args, attributes=attributes)
+            return Composite(this, *args, attributes=attributes, alias=alias)
 #            if attributes == None:
 #                attributes = set()
 #            if this.attributes.issuperset(attributes) and this.required_attributes.issubset(attributes):
