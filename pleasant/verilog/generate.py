@@ -26,7 +26,7 @@ def generic_symbol_stream():
         n += 1
 
 class Module:
-    def __init__(this, name, *objs, symbol_stream=None):
+    def __init__(this, *objs, name=None, symbol_stream=None):
         this.objs = objs
         this.name = name
         this.symbols = {}
@@ -48,7 +48,7 @@ class Module:
         for decl in rdecls:
             pwidth = decl.attributes.get("bundle_width", 0)
             upwidth = decl.attributes.get("array_width", ())
-            
+
             if pwidth == 0:
                 pstr = " "
             else:
@@ -63,5 +63,7 @@ class Module:
 
             fn(declstr+pstr+this.get_symbol(decl)+upstr)
     def __repr__(this):
+        if this.name == None:
+            return "Module("+str(objs)+")"
         return "Module("+str(this.name)+")"
 

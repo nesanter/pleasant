@@ -137,13 +137,15 @@ index = _base.Transformation(1,
                              pattern=(_base.Glob(1), _base.Glob("index", default="", transform=index_printer)),
                              rules=((_rules.body_to_type_r, _rules.r_index_tt),
                                     (_rules.attributes_and_body_to_none_r, _rules.r_index_check),
+                                    (_rules.body_to_attributes_r, _rules.r_inherit_width),
                                     (_rules.none_to_attributes_r, _rules.gen_const_attribute("array_width", None))))
 
 varindex = _base.Transformation(2,
                                 name="VARINDEX",
                                 pattern=(_base.Glob(1), "[", _base.Glob(1), "]", _base.Glob("index", default="", transform=index_printer)),
-                                rules=((_rules.body_to_type_r, _rules.r_index_tt),
+                                rules=((_rules.body_to_type_r, _rules.r_varindex_tt),
                                        (_rules.attributes_and_body_to_none_r, _rules.r_varindex_check),
+                                       (_rules.body_to_attributes_r, _rules.r_inherit_width),
                                        (_rules.none_to_attributes_r, _rules.gen_const_attribute("array_width", None))))
 
 # helper functions

@@ -114,7 +114,8 @@ def gen_type_transform(match, nomatch=None, add=None, remove=None):
 
 def gen_multiple_type_transforms(tts, ranges):
     assert len(tts) == len(ranges)
-    return lambda objs: set().union(*[tts[i](*objs[slice(*ranges[i])]) for i in len(ranges)])
+    return lambda objs: set().union(*[tt(objs[slice(*r)]) for tt, r in zip(tts, ranges)])
+#    return lambda objs: set().union(*[tts[i](objs[slice(*ranges[i])]) for i in range(len(ranges))])
 
 def gen_const_attribute(attribute, value):
     return _misc.curry(const_attribute, attribute, value)
@@ -165,7 +166,7 @@ r_index_tt = gen_type_transform(
     remove={atom_t, array_t})
 
 r_varindex_tt = gen_multiple_type_transforms(
-    (r_index_tt, gen_type_transform({atom_t, logic_t})),
+    (r_index_tt, gen_type_transform({atom_t, logic_t}, remove={atom_t})),
     ((0,1), (1,2)))
 
 
