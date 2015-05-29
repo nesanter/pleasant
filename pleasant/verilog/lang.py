@@ -17,12 +17,36 @@
 
 import pleasant.base as _base
 import pleasant.misc as _misc
+import pleasant.exceptions as _exceptions
 from . import rules as _rules
 from . import types as _types
-from . import tools as tools
+#from . import tools as tools
 #from . import generate as generate
 
+# constants
+
+def constant(bits, value):
+    if value >= 2**bits:
+        raise _exceptions.RuleViolation
+    c = _base.Atom(str(bits)+"'h"+hex(value)[2:].upper(), attributes={"bundle_width":bits})
+    c.types = {_types.constant_t, _types.expr_t}
+    return c
+
 # transformations
+
+add = _base.Transformation(2,
+                        name="+",
+                        pattern=("(", _base.Glob(1), " + ", _base.Glob(1), ")"),
+                        rules=((_rules.body_to_type_r, _rules.r_boolean_tt),
+#                               (_rules.body_to_none_r, _rules.r_width_same),
+                               (_rules.body_to_attributes_r, _rules.r_inherit_width)))
+subtract = _base.Transformation(2,
+                        name="-",
+                        pattern=("(", _base.Glob(1), " - ", _base.Glob(1), ")"),
+                        rules=((_rules.body_to_type_r, _rules.r_boolean_tt),
+#                               (_rules.body_to_none_r, _rules.r_width_same),
+                               (_rules.body_to_attributes_r, _rules.r_inherit_width)))
+
 bitand = _base.Transformation(2,
                         name="&",
                         pattern=("(", _base.Glob(1), " & ", _base.Glob(1), ")"),
@@ -53,6 +77,17 @@ reduceor =_base.Transformation(1,
                           rules=((_rules.body_to_type_r, _rules.r_boolean_tt),
                                  (_rules.none_to_attributes_r, _rules.gen_const_attribute("bundle_width", 1))))
 
+bitnot = _base.Transformation(1,
+                        name="~",
+                        pattern=("~", _base.Glob(1)),
+                        rules=((_rules.body_to_type_r, _rules.r_boolean_tt),
+                               (_rules.body_to_attributes_r, _rules.r_inherit_width)))
+negate = _base.Transformation(1,
+                        name="u-",
+                        pattern=("-", _base.Glob(1)),
+                        rules=((_rules.body_to_type_r, _rules.r_boolean_tt),
+#                               (_rules.body_to_none_r, _rules.r_width_same),
+                               (_rules.body_to_attributes_r, _rules.r_inherit_width)))
 
 let = _base.Transformation(2,
                            name="LET",

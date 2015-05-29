@@ -19,6 +19,7 @@ import pleasant.base as _base
 
 # types
 atom_t = _base.atom_t
+constant_t = _base.Type("constant_t")
 logic_t = _base.Type("logic_t")
 expr_t = _base.Type("expr_t")
 reg_t = _base.Type("reg_t")
